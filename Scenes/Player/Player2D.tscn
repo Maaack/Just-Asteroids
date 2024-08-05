@@ -1,0 +1,146 @@
+[gd_scene load_steps=14 format=3 uid="uid://c4yhaqscgvsk7"]
+
+[ext_resource type="Script" path="res://Scenes/Player/Player2D.cs" id="1_71rcx"]
+[ext_resource type="Texture2D" uid="uid://cnmoxhlsohx60" path="res://Assets/Sourced/Sprites/spaceShooter2_spritesheet.png" id="2_nubly"]
+[ext_resource type="PackedScene" uid="uid://byhdlnkiw5onm" path="res://Scenes/Components/PilotInputComponent.tscn" id="3_wpgb4"]
+[ext_resource type="PackedScene" uid="uid://6r84upex14h4" path="res://Scenes/Components/EngineControlComponent.tscn" id="4_bl5nt"]
+[ext_resource type="PackedScene" path="res://Scenes/Components/StabilityAssistComponent.tscn" id="4_hhb68"]
+[ext_resource type="PackedScene" uid="uid://ryv1niaq74gt" path="res://Scenes/Components/ShootingControlComponent.tscn" id="5_tcsau"]
+[ext_resource type="PackedScene" uid="uid://b4qyvrdegd2st" path="res://Scenes/Bullets/Bullet2D.tscn" id="6_vhtmn"]
+[ext_resource type="PackedScene" uid="uid://dy34rr3buwvtf" path="res://Scenes/Components/HurtArea2D.tscn" id="7_kkpsi"]
+[ext_resource type="PackedScene" uid="uid://d3fx8dkuqa5nb" path="res://Scenes/Components/EngineComponent2D.tscn" id="8_q1fu0"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i7p3j"]
+atlas = ExtResource("2_nubly")
+region = Rect2(567, 191, 100, 94)
+
+[sub_resource type="Animation" id="Animation_2skmd"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="Animation" id="Animation_4otke"]
+resource_name = "SPAWN"
+length = 0.5
+loop_mode = 1
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ddhj7"]
+_data = {
+"RESET": SubResource("Animation_2skmd"),
+"SPAWN": SubResource("Animation_4otke")
+}
+
+[node name="Player2D" type="RigidBody2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_71rcx")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+polygon = PackedVector2Array(0, -48, 48, 40, -48, 40)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("AtlasTexture_i7p3j")
+flip_v = true
+
+[node name="PilotInputComponent" parent="." instance=ExtResource("3_wpgb4")]
+Enabled = false
+
+[node name="EmergencyStabilityAssistComponent" parent="." instance=ExtResource("4_hhb68")]
+TriggerAngularVelocity = 12.566
+ResetAngularVelocity = 6.283
+
+[node name="InputIgnoreStabilityAssistComponent" parent="." instance=ExtResource("4_hhb68")]
+TriggerAngularVelocity = 6.283
+ResetAngularVelocity = 6.283
+
+[node name="IdleStabilityAssistComponent" parent="." instance=ExtResource("4_hhb68")]
+TriggerAngularVelocity = 0.031
+ResetAngularVelocity = 0.031
+
+[node name="EngineControlComponent" parent="." node_paths=PackedStringArray("PilotInputComponent", "EmergencyStabilityAssistComponent", "IdleStabilityAssistComponent", "InputIgnoreStabilityAssistComponent", "ForwardEngines", "ReverseEngines", "TurnLeftEngines", "TurnRightEngines") instance=ExtResource("4_bl5nt")]
+PilotInputComponent = NodePath("../PilotInputComponent")
+EmergencyStabilityAssistComponent = NodePath("../EmergencyStabilityAssistComponent")
+IdleStabilityAssistComponent = NodePath("../IdleStabilityAssistComponent")
+InputIgnoreStabilityAssistComponent = NodePath("../InputIgnoreStabilityAssistComponent")
+ForwardEngines = [NodePath("../ForwardEngineComponent2D")]
+ReverseEngines = [NodePath("../ReverseEngineComponent2D")]
+TurnLeftEngines = [NodePath("../PortRightEngineComponent2D"), NodePath("../StarboardRightEngineComponent2D2"), NodePath("../BowRightEngineComponent2D")]
+TurnRightEngines = [NodePath("../PortLeftEngineComponent2D"), NodePath("../StarboardLeftEngineComponent2D2"), NodePath("../BowLeftEngineComponent2D")]
+
+[node name="ShootingControlComponent" parent="." node_paths=PackedStringArray("PilotInputComponent", "Body2D") instance=ExtResource("5_tcsau")]
+PilotInputComponent = NodePath("../PilotInputComponent")
+Body2D = NodePath("..")
+BulletScene = ExtResource("6_vhtmn")
+GunForce = 500.0
+CoolDownTime = 0.02
+
+[node name="HurtArea2D" parent="." instance=ExtResource("7_kkpsi")]
+collision_mask = 8
+monitoring = false
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HurtArea2D"]
+polygon = PackedVector2Array(0, -48, 48, 40, -48, 40)
+
+[node name="SpawnAnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_ddhj7")
+}
+autoplay = "SPAWN"
+
+[node name="ForwardEngineComponent2D" parent="." instance=ExtResource("8_q1fu0")]
+position = Vector2(0, 40)
+EngineForce = 8.0
+
+[node name="ReverseEngineComponent2D" parent="." instance=ExtResource("8_q1fu0")]
+position = Vector2(0, -48)
+rotation = 3.14159
+EngineForce = 8.0
+
+[node name="PortLeftEngineComponent2D" parent="." instance=ExtResource("8_q1fu0")]
+position = Vector2(-48, 40)
+rotation = -0.523598
+
+[node name="PortRightEngineComponent2D" parent="." instance=ExtResource("8_q1fu0")]
+position = Vector2(-48, 40)
+rotation = 2.61799
+
+[node name="StarboardLeftEngineComponent2D2" parent="." instance=ExtResource("8_q1fu0")]
+position = Vector2(48, 40)
+rotation = -2.61799
+
+[node name="StarboardRightEngineComponent2D2" parent="." instance=ExtResource("8_q1fu0")]
+position = Vector2(48, 40)
+rotation = 0.523598
+
+[node name="BowLeftEngineComponent2D" parent="." instance=ExtResource("8_q1fu0")]
+position = Vector2(0, -48)
+rotation = 1.57079
+
+[node name="BowRightEngineComponent2D" parent="." instance=ExtResource("8_q1fu0")]
+position = Vector2(0, -48)
+rotation = 4.71238
+
+[connection signal="DamageReceived" from="HurtArea2D" to="." method="OnHurtArea2DDamageReceived"]
